@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover lets the page use the full screen on a notched phone;
+       the env(safe-area-inset-*) padding in app.css keeps content clear of the
+       notch and the home indicator. No maximum-scale — pinch-zoom stays on. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Dhishaai · Admin Portal</title>
+  <meta name="description" content="Student, fee and lifecycle management for Dhishaai Complete Analytics.">
+  <meta name="theme-color" content="#0F3D5C" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1218" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="/assets/css/app.css?v=4">
+</head>
+<body>
+  <div id="root">
+    <div class="boot"><div class="boot-mark"><img src="/assets/img/dhishaai-logo.png" alt="Dhishaai Complete Analytics"></div><div class="spinner"></div></div>
+  </div>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+  <div id="modals" class="modals"></div>
+  <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

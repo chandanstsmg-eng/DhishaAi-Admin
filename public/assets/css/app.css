@@ -1,0 +1,1192 @@
+/* =====================================================================
+   Dhishaai Admin Portal — stylesheet
+   Brand: navy #0F3D5C, orange #F47920 (UI chrome).
+   Chart series colours come from a separately validated categorical
+   palette (see --series-*) so marks stay colourblind-safe.
+   ===================================================================== */
+
+/* ------------------------------------------------------------ tokens */
+:root {
+  color-scheme: light;
+
+  --navy:        #0F3D5C;
+  --navy-700:    #0b2d44;
+  --navy-500:    #1b5c85;
+  --orange:      #F47920;
+  --orange-600:  #d9660f;
+  --orange-100:  #fdefe2;
+
+  --page:        #f3f5f7;
+  --surface:     #ffffff;
+  --surface-2:   #f8fafb;
+  --surface-3:   #eef2f5;
+  --line:        #e2e8ed;
+  --line-strong: #cbd6de;
+
+  --ink:         #10222f;
+  --ink-2:       #4a5c6a;
+  /* Secondary text — reg. numbers, phone numbers, hints. It was #7c8b98, which
+     reads at 3.5:1 on a white card, under the 4.5:1 that small text needs.
+     This is the same grey a step darker: 4.8:1, still plainly secondary
+     against ink-2 at 7.4 and ink at 16. Dark mode already passed, so its
+     value below is unchanged. */
+  --ink-3:       #64757f;
+
+  --good:        #0ca30c;
+  --good-bg:     #e7f7e7;
+  --warn:        #b57500;
+  --warn-bg:     #fdf3dd;
+  --danger:      #d03b3b;
+  --danger-bg:   #fdeaea;
+  --info:        #2a78d6;
+  --info-bg:     #e8f1fc;
+
+  /* validated categorical series palette — light steps */
+  --series-1: #2a78d6;  --series-2: #eb6834;  --series-3: #1baf7a;  --series-4: #eda100;
+  --series-5: #e87ba4;  --series-6: #008300;  --series-7: #4a3aa7;  --series-8: #e34948;
+  --grid:     #e5eaee;
+  --axis:     #c3cdd5;
+
+  --radius:    10px;
+  --radius-sm: 7px;
+  --shadow:    0 1px 2px rgba(16,34,47,.05), 0 4px 16px rgba(16,34,47,.06);
+  --shadow-lg: 0 12px 44px rgba(16,34,47,.18);
+  --sidebar-w: 232px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page:        #0b1218;
+  --surface:     #141e26;
+  --surface-2:   #1a252e;
+  --surface-3:   #223039;
+  --line:        #26343f;
+  --line-strong: #354856;
+  --ink:         #eef4f8;
+  --ink-2:       #a9bbc8;
+  --ink-3:       #7b8d9b;
+  --navy:        #123d59;
+  --orange-100:  #3a2412;
+  --good-bg:     #10281a;
+  --warn-bg:     #2e2413;
+  --danger-bg:   #2e1616;
+  --info-bg:     #14263c;
+  --good:        #35c635;
+  --warn:        #e0a72c;
+  --danger:      #ef6b6b;
+  --info:        #5fa0e8;
+  --series-1: #3987e5;  --series-2: #d95926;  --series-3: #199e70;  --series-4: #c98500;
+  --series-5: #d55181;  --series-6: #008300;  --series-7: #9085e9;  --series-8: #e66767;
+  --grid:     #22303a;
+  --axis:     #354856;
+  --shadow:    0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+  --shadow-lg: 0 12px 44px rgba(0,0,0,.55);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+/* Nothing may push the page sideways. An image wider than its column is the
+   usual culprit on a phone. */
+img, svg, video { max-width: 100%; }
+
+/*
+ * Always reserve the vertical scrollbar's gutter. A short page (Courses, Staff)
+ * needs no scrollbar, so without this the viewport grows 10px wider than it is
+ * on a long page and the whole layout jumps sideways on every navigation.
+ * The page scrolls up and down only; nothing shifts left or right.
+ */
+html {
+  /* overflow-y must not be `visible`, or html is not a scroll container and
+     scrollbar-gutter is ignored. `scroll` alone already reserves the gutter. */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  /*
+   * The page scrolls up and down, never sideways. Setting overflow-y above
+   * quietly promoted overflow-x from `visible` to `auto`, so anything that
+   * managed to be a pixel too wide made the entire document draggable left and
+   * right — and the sidebar, being sticky rather than fixed, slid off the edge
+   * with it.
+   *
+   * `clip`, not `hidden`: hidden would make this a second scroll container and
+   * break the sticky sidebar. Nothing is lost by clipping, because everything
+   * that genuinely needs to scroll sideways — the wide tables — already does so
+   * inside its own .table-wrap.
+   */
+  overflow-x: clip;
+}
+
+/*
+ * Set while a modal or the nav drawer is open, to hold the page still
+ * underneath. It has to be on html: the rule above makes html the scroll
+ * container, and the viewport takes its overflow from the root element, so the
+ * usual trick of hiding overflow on body does nothing here.
+ *
+ * `hidden` still leaves html a scroll container, so the scrollbar-gutter above
+ * goes on reserving its space and the layout does not shift sideways as the
+ * bar disappears — measured on .content, which is the width that actually
+ * matters; documentElement.clientWidth reports the real bar rather than the
+ * reserved gutter and will tell you otherwise. The scroll offset is kept, so
+ * closing the overlay leaves you where you were.
+ */
+html.scroll-locked { overflow-y: hidden; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--navy-500); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:root[data-theme="dark"] a { color: #6fb0e0; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ------------------------------------------------------------- boot */
+.boot {
+  /* dvh tracks the *visible* viewport. On a phone, 100vh includes the space
+     under the address bar, so a "full height" box is taller than the screen
+     and its bottom is unreachable. vh stays first as the fallback. */
+  height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 22px; padding: 20px;
+}
+.boot-mark img { display: block; width: 268px; max-width: 78vw; height: auto; }
+/* the logo is navy on transparent — on a dark page it sits on a white plate,
+   never recoloured. */
+:root[data-theme="dark"] .boot-mark {
+  background: #fff; padding: 16px 20px; border-radius: 14px;
+}
+.spinner {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2.5px solid var(--line); border-top-color: var(--orange);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ------------------------------------------------------------ landing */
+/* One screen: bar, centred hero, thin footer. No charts, no figures. */
+/*
+ * The gradient lives on the whole page rather than on the hero alone, so the
+ * footer sits in the same field of colour instead of being a white strip cut
+ * off the bottom of it. The bar keeps its own white surface on top; the hero
+ * and the footer are transparent and let this through.
+ */
+/*
+ * The whole page clips, not the hero. The glows below are anchored to the hero
+ * but bleed past it; whichever ancestor clips them draws a hard edge where it
+ * cuts. Clipping here puts that edge off the bottom of the page instead of
+ * across the top of the footer.
+ *
+ * Safe to hide overflow: .lp is min-height, not height, so it grows to fit its
+ * children and nothing real is ever cut off — only the decorative glows are.
+ */
+.lp {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  background: linear-gradient(152deg, var(--navy-700) 0%, var(--navy) 44%, #17587a 100%);
+}
+.lp-bar-inner, .lp-hero-inner, .lp-foot-inner {
+  width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 28px;
+}
+/*
+ * The bar and the footer are chrome, not copy: they run the width of the page
+ * so the logo sits against the left edge and the sign-in buttons against the
+ * right. Capped at 1080 like the hero, they floated in the middle of a wide
+ * screen with ~450px of nothing on either side of them.
+ *
+ * The hero keeps its own narrower measure below — a line of prose stretched
+ * across 1900px is not readable, which is the reason the cap exists at all.
+ */
+.lp-bar-inner, .lp-foot-inner {
+  max-width: none;
+  padding-left: max(28px, env(safe-area-inset-left));
+  padding-right: max(28px, env(safe-area-inset-right));
+}
+/*
+ * The logo carries its own left inset — 9px of plate padding plus the
+ * transparent margin inside the file — so measuring the gutter from the edge of
+ * the image put the visible mark ~16px further in than the Sign up button is
+ * from the other side. Take that back off here so the two sit on the same line.
+ * Measured against the current artwork; re-check if the logo file is replaced.
+ */
+.lp-bar-inner { padding-left: max(12px, env(safe-area-inset-left)); }
+
+/* --- top bar: logo left, actions right */
+/* z-index keeps the orange glow, which now reaches this far up, behind the bar */
+.lp-bar {
+  flex: none; background: var(--surface); border-bottom: 1px solid var(--line);
+  position: relative; z-index: 2;
+}
+.lp-bar-inner { display: flex; align-items: center; gap: 18px; height: 68px; }
+.lp-logo { display: flex; align-items: center; }
+/*
+ * White plate keeps the navy artwork legible when the bar is dark.
+ *
+ * 50px, not 40: the artwork does not fill its own file, so at 40px the visible
+ * mark stood 28.6px tall against 38.3px buttons and read as the smaller thing
+ * on the bar. At 50px the ink measures ~38px — the same height as the buttons
+ * opposite it.
+ */
+.lp-logo img {
+  display: block; height: 50px; width: auto;
+  background: #fff; border-radius: 6px; padding: 5px 9px;
+}
+.lp-bar-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+/* --- hero fills whatever is left of the viewport */
+.lp-hero {
+  flex: 1; position: relative; color: #fff;
+  display: grid; place-items: center; padding: 56px 0;
+  /* the colour comes from .lp above — the glows and dot field below still
+     paint on top of it, they just no longer stop where the hero stops.
+     No overflow: hidden here; .lp does the clipping, see the note there */
+  background: none;
+}
+/* faint dot field, faded at the edges so it reads as texture, not pattern */
+.lp-hero-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(rgba(255,255,255,.14) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(ellipse 76% 70% at 50% 42%, #000 30%, transparent 74%);
+  mask-image: radial-gradient(ellipse 76% 70% at 50% 42%, #000 30%, transparent 74%);
+}
+.lp-hero::after {
+  content: ''; position: absolute; left: 50%; top: -230px; transform: translateX(-50%);
+  width: 820px; height: 600px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(244,121,32,.26), transparent 66%);
+}
+/* cool counter-glow low-left, so the panel has depth rather than one hot spot */
+.lp-hero::before {
+  content: ''; position: absolute; left: -180px; bottom: -260px;
+  width: 700px; height: 620px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(70,170,220,.20), transparent 68%);
+}
+.lp-hero-inner { position: relative; z-index: 1; text-align: center; max-width: 780px; }
+
+/* settle the hero in on load, staggered top to bottom */
+@keyframes lp-rise { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: none; } }
+.lp-hero-inner > * { animation: lp-rise .62s cubic-bezier(.22,.61,.36,1) both; }
+.lp-hero-inner > h1 { animation-delay: .07s; }
+.lp-hero-inner > p { animation-delay: .15s; }
+.lp-hero-cta { animation-delay: .23s; }
+.lp-points { animation-delay: .31s; }
+@media (prefers-reduced-motion: reduce) { .lp-hero-inner > * { animation: none; } }
+
+/*
+ * The line above the headline. A bordered pill rather than plain small text,
+ * so it reads as a badge on the page instead of a stray caption — and the dot
+ * gives the panel one small piece of movement without anything sliding about.
+ */
+.lp-kicker {
+  display: inline-flex; align-items: center; gap: 9px;
+  margin-bottom: 18px; padding: 6px 15px 6px 11px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.18);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  color: rgba(255,255,255,.92);
+  font-size: 11.5px; font-weight: 650;
+  letter-spacing: 1.6px; text-transform: uppercase;
+  white-space: nowrap;
+}
+.lp-kicker .dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--orange);
+  animation: kicker-pulse 2.6s ease-out infinite;
+}
+/* a ring that expands and fades, rather than a blinking dot — it reads as
+   "live" without pulling the eye off the headline underneath */
+@keyframes kicker-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(244,121,32,.55); }
+  70%  { box-shadow: 0 0 0 9px rgba(244,121,32,0); }
+  100% { box-shadow: 0 0 0 0 rgba(244,121,32,0); }
+}
+/* Must come after the rule that sets the pulse: same specificity, so the one
+   declared later is the one that wins. Placed earlier it was simply ignored. */
+@media (prefers-reduced-motion: reduce) {
+  .lp-kicker .dot { animation: none; }
+}
+
+/* the tracking is what makes this line long — ease it off before it can
+   outgrow a narrow phone and force the page sideways */
+@media (max-width: 430px) {
+  .lp-kicker {
+    font-size: 10px; letter-spacing: 1px;
+    padding: 5px 12px 5px 9px; gap: 7px; margin-bottom: 14px;
+  }
+}
+.lp-hero h1 { font-size: 50px; line-height: 1.1; letter-spacing: -1.4px; font-weight: 750; margin: 0 0 18px; }
+.lp-hero h1 span { color: var(--orange); }
+.lp-hero-inner > p {
+  color: rgba(255,255,255,.82); font-size: 16px; line-height: 1.62;
+  max-width: 56ch; margin: 0 auto 30px;
+}
+.lp-hero-cta { display: flex; justify-content: center; margin-bottom: 44px; }
+.btn.lg { padding: 13px 30px; font-size: 15px; }
+.lp-hero-cta .btn.primary {
+  box-shadow: 0 10px 28px rgba(244,121,32,.34);
+  transition: transform .16s, box-shadow .16s;
+}
+.lp-hero-cta .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(244,121,32,.42); }
+
+.lp-points {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; text-align: left;
+}
+.lp-points li { position: relative; padding-top: 16px; }
+.lp-points li::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--orange), rgba(244,121,32,.10));
+}
+.lp-points li b { display: block; font-size: 14px; font-weight: 650; margin-bottom: 6px; }
+.lp-points li span { font-size: 12.5px; color: rgba(255,255,255,.72); line-height: 1.62; }
+
+/* --- footer */
+/*
+ * No rule above the footer. The footer sits on the same gradient as the hero,
+ * so a light hairline read as a seam splitting one panel in two — it drew the
+ * eye to the divider instead of letting the colour run to the bottom edge.
+ * The whitespace above the line of small print is separation enough.
+ */
+.lp-foot { flex: none; background: transparent; border-top: 0; position: relative; z-index: 1; }
+.lp-foot-inner {
+  display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between;
+  padding-top: 16px; padding-bottom: 16px; font-size: 12.5px;
+  /* .72 clears 4.5:1 against the lightest end of the gradient behind it;
+     lower values looked right on the dark navy and failed over the teal */
+  color: rgba(255,255,255,.72);
+}
+
+@media (max-width: 780px) {
+  .lp-hero h1 { font-size: 34px; }
+  .lp-points { grid-template-columns: 1fr; gap: 16px; text-align: center; }
+  .lp-points li { padding-top: 0; }
+  .lp-points li::before { display: none; }
+}
+@media (max-width: 620px) {
+  .lp-hero-inner { padding: 0 16px; }
+  .lp-bar-inner, .lp-foot-inner {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  /* same correction as on the desktop bar: the 16px gutter is already inside
+     the logo, so taking it here would double it and push the mark inward */
+  .lp-bar-inner { padding-left: max(0px, env(safe-area-inset-left)); }
+  .lp-hero h1 { font-size: 29px; letter-spacing: -.8px; }
+}
+
+/* ------------------------------------------------------------ login */
+/* One page: a single centred card, not a split screen. */
+.login-page {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 20px; position: relative; overflow: hidden;
+  background: linear-gradient(150deg, var(--navy) 0%, #16506f 55%, #1d6688 100%);
+}
+.login-page::after {
+  content: ''; position: absolute; right: -170px; bottom: -190px;
+  width: 520px; height: 520px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,121,32,.34), transparent 68%);
+}
+.login-card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 404px;
+  background: var(--surface); border-radius: 14px;
+  padding: 32px 32px 30px; box-shadow: var(--shadow-lg);
+}
+.login-back {
+  background: none; border: 0; padding: 0; margin: 0 0 16px; cursor: pointer;
+  font: inherit; font-size: 12.5px; color: var(--ink-2);
+}
+.login-back:hover { color: var(--ink); }
+.login-brand { margin-bottom: 24px; }
+.login-brand img {
+  display: block; width: 236px; max-width: 100%; height: auto; margin: 0 auto;
+  background: #fff; border-radius: 10px; padding: 10px 14px;
+}
+.login-card h2 { margin: 0 0 6px; font-size: 23px; letter-spacing: -.3px; }
+.login-card .muted { margin: 0 0 24px; }
+.login-hint {
+  margin-top: 22px; padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2);
+}
+.login-hint code { background: var(--surface-3); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+@media (max-width: 460px) { .login-card { padding: 26px 20px 24px; } }
+
+/* ------------------------------------------------------------ shell */
+.shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; min-height: 100dvh; }
+
+.sidebar {
+  background: var(--navy); color: #fff; display: flex; flex-direction: column;
+  /* left pins it horizontally as well as vertically, so even if something did
+     get the page scrolling sideways the menu would stay against the edge */
+  position: sticky; top: 0; left: 0; height: 100vh; height: 100dvh;
+}
+:root[data-theme="dark"] .sidebar { background: #0c1a24; border-right: 1px solid var(--line); }
+.sidebar-brand { padding: 16px 14px 14px; }
+.sidebar-brand img {
+  display: block; width: 100%; height: auto;
+  background: #fff; border-radius: 8px; padding: 9px 11px;
+}
+/*
+ * The menu scrolls up and down only.
+ *
+ * overflow-x is spelled out because leaving it alone does not mean "no
+ * sideways scrolling": once overflow-y is auto, CSS promotes overflow-x from
+ * visible to auto too. A link a pixel wider than the box — which is what
+ * happens when the system scrollbar is wider than expected, as on a scaled
+ * Windows display — then made the whole sidebar draggable left and right.
+ *
+ * scrollbar-gutter holds the scrollbar's width whether or not it is showing,
+ * so labels and badges do not jump sideways as the menu grows past the bottom
+ * of a short window.
+ */
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding: 4px 10px 20px;
+}
+.nav-group {
+  font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase;
+  color: rgba(255,255,255,.4); padding: 16px 10px 6px; font-weight: 700;
+}
+.nav a {
+  display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: var(--radius-sm);
+  color: rgba(255,255,255,.78); font-size: 13.5px; text-decoration: none; margin-bottom: 1px;
+  transition: background .12s, color .12s;
+}
+.nav a:hover { background: rgba(255,255,255,.08); color: #fff; text-decoration: none; }
+.nav a.active { background: var(--orange); color: #fff; font-weight: 600; }
+.nav a .ico { width: 17px; flex: none; text-align: center; opacity: .95; font-size: 14px; }
+/*
+ * The label is the part that gives. A flex item will not shrink past its own
+ * content by default, so a long name like "Staff & trainers" used to push the
+ * row wider than the sidebar; with the row no longer scrollable sideways that
+ * would clip it instead. min-width lets it wrap, and the icon and badge hold
+ * their size either way.
+ */
+.nav a > span:not(.ico):not(.pill) { min-width: 0; overflow-wrap: break-word; }
+.nav a .pill {
+  margin-left: auto; flex: none;
+  background: rgba(255,255,255,.16); border-radius: 20px;
+  padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.nav a.active .pill { background: rgba(0,0,0,.22); }
+
+/*
+ * Eighteen links and six headings come to ~890px, which does not fit a laptop
+ * window once the browser chrome and any zoom are taken off. Rather than leave
+ * a third of the menu below the fold, the rhythm tightens on shorter screens —
+ * same links, same sizes, less air between them.
+ */
+@media (max-height: 900px) {
+  .nav { padding-bottom: 10px; }
+  .nav-group { padding: 9px 10px 3px; }
+  .nav a { padding: 5px 11px; }
+}
+
+.sidebar-foot { padding: 12px 16px 16px; border-top: 1px solid rgba(255,255,255,.1); font-size: 12px; color: rgba(255,255,255,.55); }
+
+.main { display: flex; flex-direction: column; min-width: 0; }
+
+.topbar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 11px 22px;
+  padding-left: max(22px, env(safe-area-inset-left));
+  padding-right: max(22px, env(safe-area-inset-right));
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 30;
+}
+.search { position: relative; flex: 1; max-width: 460px; min-width: 0; }
+.search input {
+  width: 100%; padding: 8px 12px 8px 34px; border: 1px solid var(--line);
+  border-radius: 20px; background: var(--surface-2); outline: none;
+}
+.search input:focus { border-color: var(--navy-500); background: var(--surface); }
+.search .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); }
+.search-results {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  max-height: 400px; overflow-y: auto; z-index: 40;
+}
+.search-results a {
+  display: block; padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--ink);
+}
+.search-results a:last-child { border-bottom: 0; }
+.search-results a:hover { background: var(--surface-2); text-decoration: none; }
+.search-results .t { font-weight: 600; }
+.search-results .s { font-size: 12px; color: var(--ink-3); }
+.search-results .k {
+  float: right; font-size: 10px; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--ink-3); background: var(--surface-3); padding: 2px 7px; border-radius: 20px;
+}
+.topbar-spacer { flex: 1; }
+.user-chip { display: flex; align-items: center; gap: 9px; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--orange); color: #fff;
+  display: grid; place-items: center; font-weight: 700; font-size: 13px;
+}
+.user-chip .n { font-weight: 600; font-size: 13px; line-height: 1.2; }
+.user-chip .r { font-size: 11px; color: var(--ink-3); text-transform: capitalize; }
+
+/* min-height keeps the column a full screen tall while a route is loading, so
+   the page does not collapse onto the spinner and spring back on every click */
+.content {
+  padding: 22px; flex: 1; min-width: 0;
+  min-height: calc(100vh - 66px); min-height: calc(100dvh - 66px);
+}
+
+/* The drawer's dimmer. It exists at every width but is only made visible and
+   clickable once the drawer can open, so a tap anywhere outside closes it —
+   on a touch screen there is no Escape key to fall back on. */
+.scrim {
+  position: fixed; inset: 0; z-index: 50; background: rgba(10,22,31,.5);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+/* Qualified with .btn deliberately: `.btn { display: inline-flex }` is declared
+   further down the file, and at equal specificity the later rule would win —
+   which left the drawer button showing on desktop, where pressing it now dims
+   the page and locks scrolling for a drawer that never appears. */
+.btn.menu-btn { display: none; }
+
+@media (max-width: 980px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; z-index: 60; transform: translateX(-100%); transition: transform .2s;
+    width: min(var(--sidebar-w), 84vw);
+    /* clear of the notch / rounded corners on a phone held in landscape */
+    padding-left: env(safe-area-inset-left);
+  }
+  .sidebar.open { transform: none; box-shadow: var(--shadow-lg); }
+  .scrim.show { opacity: 1; pointer-events: auto; }
+  .content { padding: 14px; }
+  .user-chip .n, .user-chip .r { display: none; }
+  .btn.menu-btn { display: inline-flex; }
+}
+
+/* The drawer animates; honour a system request for less movement. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .scrim { transition: none; }
+}
+
+/* Set by app.js while the window is being resized or zoomed. Crossing the
+   980px breakpoint swaps the sidebar between a grid column and an off-screen
+   drawer, and animating that swap made it slide about during the resize. */
+html.resizing .sidebar,
+html.resizing .scrim { transition: none; }
+
+/* The drawer holds the page still through the shared html.scroll-locked rule
+   near the top of this file; the class here is only a state flag for scripts. */
+.nav { overscroll-behavior: contain; }
+
+/*
+ * Below ~640px the topbar cannot hold search and the account controls on one
+ * line without crushing both. Search drops to its own full-width row instead
+ * of being hidden — on a phone it is the fastest way to reach a student, so
+ * it is the last thing that should go.
+ */
+@media (max-width: 640px) {
+  .topbar {
+    gap: 9px 10px; padding: 9px 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .search { order: 10; flex: 1 0 100%; max-width: none; }
+  .topbar-spacer { flex: 1; }
+  /* the header now takes two rows, so the content column starts lower */
+  .content { min-height: calc(100dvh - 112px); }
+}
+
+/* ------------------------------------------------------- page header */
+.page-head {
+  display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.page-head h1 { margin: 0; font-size: 21px; letter-spacing: -.35px; }
+.page-head .sub { color: var(--ink-3); font-size: 13px; margin-top: 2px; }
+.page-head .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------------------------------------------------------- controls */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--ink); cursor: pointer; font-size: 13.5px;
+  font-weight: 500; white-space: nowrap; transition: background .12s, border-color .12s;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary { background: var(--orange); border-color: var(--orange); color: #fff; font-weight: 600; }
+.btn.primary:hover { background: var(--orange-600); border-color: var(--orange-600); }
+.btn.navy { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 600; }
+.btn.navy:hover { background: var(--navy-700); }
+.btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.btn.danger:hover { background: var(--danger-bg); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--surface-3); }
+.btn.sm { padding: 5px 10px; font-size: 12.5px; }
+.btn.icon { padding: 7px 9px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.field > label .req { color: var(--danger); }
+.field .hint { font-size: 11.5px; color: var(--ink-3); }
+.field .err { font-size: 11.5px; color: var(--danger); font-weight: 500; }
+.input, select.input, textarea.input {
+  width: 100%; padding: 8px 11px; border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm); background: var(--surface); outline: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+.input:focus { border-color: var(--navy-500); box-shadow: 0 0 0 3px rgba(27,92,133,.14); }
+/*
+ * A field can be locked without being unreadable. The old muted ink sat at
+ * 3.1:1 on the grey fill — under the 4.5:1 needed to read comfortably — and
+ * these fields carry real answers (which student, which course, which plan),
+ * not placeholders. Ink-2 reads at 6.2:1 light / 6.9:1 dark while staying a
+ * shade softer than a live field; the fill and missing focus ring are what
+ * say "not editable". -webkit-text-fill-color is needed or Safari and iOS
+ * override the colour with their own grey.
+ */
+.input:disabled,
+.input[readonly] {
+  background: var(--surface-3);
+  color: var(--ink-2);
+  -webkit-text-fill-color: var(--ink-2);
+  opacity: 1;
+}
+.input.invalid { border-color: var(--danger); }
+textarea.input { min-height: 72px; resize: vertical; }
+select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237c8b98' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 11px center; padding-right: 30px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--orange); cursor: pointer; }
+
+.filters {
+  display: flex; gap: 9px; flex-wrap: wrap; align-items: flex-end;
+  padding: 12px 14px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); margin-bottom: 14px;
+}
+.filters .field { flex: 0 0 auto; min-width: 150px; }
+.filters .field.grow { flex: 1 1 220px; }
+.filters .spacer { flex: 1; }
+
+/* ------------------------------------------------------------ cards */
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  /*
+   * A grid item's automatic minimum size is its content's min-content width,
+   * so a wide table inside a card would stretch its own grid track and carry
+   * the whole page sideways with it. Pinning the floor at 0 makes the card
+   * obey the track instead, which is what leaves the table free to scroll
+   * inside .table-wrap rather than pushing outward.
+   */
+  min-width: 0;
+}
+.card-head {
+  /* wraps rather than pushing the card wider than the page on a narrow window */
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+}
+.card-head h3 { margin: 0; font-size: 14.5px; font-weight: 650; }
+.card-head .sub { font-size: 12px; color: var(--ink-3); }
+.card-head .right { margin-left: auto; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+/* action row under a table — sits at the bottom-right of the card */
+.export-bar {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px; border-top: 1px solid var(--line);
+}
+.card-body { padding: 16px; }
+.card-body.flush { padding: 0; }
+
+.grid { display: grid; gap: 14px; }
+.grid.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/*
+ * minmax(0, …) on both tracks. A bare `1fr` is `minmax(auto, 1fr)`, so a wide
+ * table inside either card can shove its own track past its share and drag the
+ * neighbour narrower than the ratio says. Pinning the floor at 0 makes the
+ * ratio hold and leaves the table to scroll inside .table-wrap instead.
+ */
+.grid.s21 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.grid.s12 { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+@media (max-width: 1180px) { .grid.c4 { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 1000px) {
+  .grid.c3, .grid.s21, .grid.s12 { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) { .grid.c2, .grid.c4 { grid-template-columns: 1fr; } }
+
+/* ------------------------------------------------------- stat tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+}
+.tile::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--navy);
+}
+.tile.good::before   { background: var(--good); }
+.tile.warn::before   { background: var(--warn); }
+.tile.danger::before { background: var(--danger); }
+.tile.accent::before { background: var(--orange); }
+.tile .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .9px; color: var(--ink-3); font-weight: 650; }
+.tile .value { font-size: 25px; font-weight: 700; letter-spacing: -.8px; margin-top: 3px; line-height: 1.1; }
+.tile .sub { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+.tile.clickable { cursor: pointer; }
+.tile.clickable:hover { border-color: var(--line-strong); }
+
+/* ----------------------------------------------------------- tables */
+/*
+ * A register with nine columns cannot be reflowed onto a 360px screen without
+ * becoming something other than a register. It stays a table and scrolls
+ * sideways — overscroll-behavior keeps that swipe inside the table instead of
+ * triggering the browser's back gesture.
+ */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  /*
+   * Edge shadows that say "there is more this way". The two `local` gradients
+   * scroll with the content and cover the shadow beneath once that end is
+   * reached, so the cue appears and clears on its own with no JS. Without it
+   * a phone user has no way to tell the register continues past the screen.
+   */
+  background:
+    linear-gradient(to right, var(--surface) 34%, rgba(255,255,255,0)) left center,
+    linear-gradient(to left,  var(--surface) 34%, rgba(255,255,255,0)) right center,
+    radial-gradient(farthest-side at 0 50%,   rgba(16,34,47,.16), transparent) left center,
+    radial-gradient(farthest-side at 100% 50%, rgba(16,34,47,.16), transparent) right center;
+  background-repeat: no-repeat;
+  background-size: 36px 100%, 36px 100%, 13px 100%, 13px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+table.dt { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.dt th {
+  text-align: left; padding: 10px 14px; font-size: 11px; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 700;
+  border-bottom: 1px solid var(--line); background: var(--surface-2);
+  position: sticky; top: 0; white-space: nowrap;
+}
+table.dt td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.dt tbody tr:last-child td { border-bottom: 0; }
+table.dt tbody tr.clickable { cursor: pointer; }
+table.dt tbody tr:hover { background: var(--surface-2); }
+table.dt .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* centred column — the buttons sit under the middle of their heading */
+table.dt .ctr { text-align: center; white-space: nowrap; }
+table.dt .ctr .row-actions { justify-content: center; }
+table.dt .strong { font-weight: 650; }
+table.dt tfoot td { padding: 11px 14px; font-weight: 700; border-top: 2px solid var(--line-strong); background: var(--surface-2); }
+.row-actions { display: flex; gap: 5px; justify-content: flex-end; }
+.dt-empty { padding: 44px 20px; text-align: center; color: var(--ink-3); }
+.dt-empty .big { font-size: 30px; opacity: .35; margin-bottom: 8px; }
+/* the spinner sits centred in whatever height the container is holding,
+   instead of pinned to the top of a tall empty box */
+.dt-empty.loading-block {
+  display: grid; place-content: center; align-content: center; min-height: 180px; height: 100%;
+}
+
+/* ----------------------------------------------------------- badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 650; background: var(--surface-3); color: var(--ink-2);
+  white-space: nowrap; line-height: 1.7;
+}
+.badge.good   { background: var(--good-bg);   color: var(--good); }
+.badge.warn   { background: var(--warn-bg);   color: var(--warn); }
+.badge.danger { background: var(--danger-bg); color: var(--danger); }
+.badge.info   { background: var(--info-bg);   color: var(--info); }
+.badge.navy   { background: var(--surface-3); color: var(--navy-500); }
+.badge.accent { background: var(--orange-100); color: var(--orange-600); }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.muted { color: var(--ink-3); }
+.small { font-size: 12px; }
+.mono  { font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+.right { text-align: right; }
+.money-pos { color: var(--good); font-weight: 650; }
+.money-neg { color: var(--danger); font-weight: 650; }
+
+/* ------------------------------------------------------------ misc */
+.progress { height: 6px; background: var(--surface-3); border-radius: 20px; overflow: hidden; min-width: 60px; }
+.progress > span { display: block; height: 100%; background: var(--orange); border-radius: 20px; }
+.progress.good > span { background: var(--good); }
+.progress.warn > span { background: var(--warn); }
+
+.alert {
+  display: flex; gap: 11px; padding: 11px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--surface-2); font-size: 13px; align-items: flex-start;
+}
+.alert .ico { font-size: 15px; line-height: 1.35; }
+.alert b { display: block; }
+.alert.danger { background: var(--danger-bg); border-color: transparent; color: var(--danger); }
+.alert.warn   { background: var(--warn-bg);   border-color: transparent; color: var(--warn); }
+.alert.info   { background: var(--info-bg);   border-color: transparent; color: var(--info); }
+.alert a { color: inherit; text-decoration: underline; }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; font-size: 13.5px; }
+.kv dt { color: var(--ink-3); font-weight: 500; }
+.kv dd { margin: 0; font-weight: 550; }
+
+/* Fee breakdown inside the enrollment form — laid out like the bill it becomes,
+   so the total is arrived at in front of you rather than just asserted. */
+.fee-summary {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); padding: 12px 14px; font-size: 13.5px;
+}
+.fee-summary .row { display: flex; align-items: baseline; gap: 12px; padding: 3.5px 0; }
+.fee-summary .row > span:first-child { color: var(--ink-2); }
+.fee-summary .note { color: var(--ink-3); font-weight: 400; font-size: 12.5px; }
+.fee-summary .v { margin-left: auto; font-weight: 550; font-variant-numeric: tabular-nums; }
+.fee-summary .rule { border-top: 1px solid var(--line-strong); margin: 8px 0; }
+.fee-summary .total > span:first-child { color: var(--ink); font-weight: 650; }
+.fee-summary .total .v { font-size: 17px; font-weight: 700; }
+
+.tabs { display: flex; gap: 3px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+.tabs button {
+  padding: 9px 15px; border: 0; background: none; cursor: pointer; color: var(--ink-3);
+  font-weight: 600; font-size: 13.5px; border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+  white-space: nowrap;
+}
+.tabs button:hover { color: var(--ink); }
+.tabs button.active { color: var(--navy-500); border-bottom-color: var(--orange); }
+:root[data-theme="dark"] .tabs button.active { color: var(--orange); }
+
+/* ---------------------------------------------------------- reports */
+/*
+ * Catalogue on the left, the report on the right. The list is pinned and
+ * scrolls inside itself rather than with the page: a report from one of the
+ * lower groups used to leave its own highlighted row above the fold, so the
+ * screen never said which of the nine you were actually looking at.
+ */
+.report-layout {
+  display: grid; grid-template-columns: 236px minmax(0, 1fr);
+  gap: 14px; align-items: start;
+}
+.report-picker, .report-body { min-width: 0; }
+
+/*
+ * On a desktop the work area is given the rest of the viewport and each column
+ * scrolls inside itself, so the page as a whole has nothing left to scroll.
+ * Sticky was not enough: it only pins once the page has scrolled far enough to
+ * reach the offset, so the catalogue still drifted up the screen first. This
+ * way the report moves and the list does not move at all.
+ *
+ * `.split` is added by the script, which measures the height — the space above
+ * depends on the header and the date bar, and CSS cannot see that.
+ */
+@media (min-width: 981px) {
+  .report-layout.split { align-items: stretch; }
+  .report-layout.split > * {
+    height: 100%; overflow-y: auto; overscroll-behavior: contain;
+  }
+}
+/* the list scrolls under its own heading, so "Reports" stays put */
+.report-picker .card-head {
+  position: sticky; top: 0; z-index: 1; background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+@media (max-width: 980px) {
+  /* stacked: the list sits above the report, and the page scrolls as usual */
+  .report-layout { grid-template-columns: minmax(0, 1fr); }
+}
+/* printing wants the whole report, not one screenful of a scroll box */
+@media print {
+  .report-layout, .report-layout > * {
+    height: auto !important; overflow: visible !important;
+  }
+}
+
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content: ''; position: absolute; left: 5px; top: 5px; bottom: 5px; width: 2px; background: var(--line); }
+.timeline .item { position: relative; padding-bottom: 15px; }
+.timeline .item::before {
+  content: ''; position: absolute; left: -19px; top: 4px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--orange); border: 2px solid var(--surface);
+}
+.timeline .when { font-size: 11.5px; color: var(--ink-3); }
+
+/* ----------------------------------------------------------- kanban */
+.kanban { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
+.kcol {
+  flex: 0 0 262px; background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius); display: flex; flex-direction: column;
+  max-height: calc(100vh - 210px); max-height: calc(100dvh - 210px);
+}
+.kcol.dragover { border-color: var(--orange); background: var(--orange-100); }
+.kcol-head {
+  padding: 10px 13px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .7px; color: var(--ink-2); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px; position: sticky; top: 0; background: var(--surface-2);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.kcol-head .n {
+  margin-left: auto; background: var(--surface-3); border-radius: 20px; padding: 1px 8px;
+  font-size: 11px; font-variant-numeric: tabular-nums;
+}
+.kcol-body { padding: 9px; display: grid; gap: 8px; overflow-y: auto; }
+.kcard {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 10px 11px; cursor: grab; box-shadow: var(--shadow);
+}
+.kcard:active { cursor: grabbing; }
+.kcard.dragging { opacity: .45; }
+.kcard .n { font-weight: 650; font-size: 13.5px; }
+.kcard .m { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.kcard .f { display: flex; align-items: center; gap: 7px; margin-top: 7px; font-size: 11.5px; }
+
+/* ----------------------------------------------------------- modals */
+.modals:empty { display: none; }
+.backdrop {
+  position: fixed; inset: 0; background: rgba(10,22,31,.5); backdrop-filter: blur(2px);
+  display: grid; place-items: center; z-index: 100; padding: 20px; overflow-y: auto;
+  /* stop a scroll that runs out of overlay from continuing into the page */
+  overscroll-behavior: contain;
+}
+.modal {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 560px;
+  max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px);
+  display: flex; flex-direction: column;
+  animation: pop .16s ease-out;
+}
+.modal.wide { max-width: 860px; }
+.modal.narrow { max-width: 420px; }
+@keyframes pop { from { transform: translateY(10px) scale(.985); opacity: 0; } }
+.modal-head { display: flex; align-items: center; padding: 15px 18px; border-bottom: 1px solid var(--line); }
+.modal-head h3 { margin: 0; font-size: 16px; }
+.modal-head .x { margin-left: auto; border: 0; background: none; font-size: 21px; cursor: pointer; color: var(--ink-3); line-height: 1; padding: 0 4px; }
+.modal-body { padding: 18px; overflow-y: auto; overscroll-behavior: contain; }
+.modal-foot { display: flex; gap: 9px; justify-content: flex-end; padding: 14px 18px; border-top: 1px solid var(--line); background: var(--surface-2); border-radius: 0 0 var(--radius) var(--radius); }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.form-grid .span2 { grid-column: 1 / -1; }
+.form-grid .section {
+  grid-column: 1 / -1; font-size: 11px; text-transform: uppercase; letter-spacing: 1.1px;
+  color: var(--ink-3); font-weight: 700; padding-top: 6px; border-top: 1px solid var(--line);
+}
+.form-grid .section:first-child { border-top: 0; padding-top: 0; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+
+/* ----------------------------------------------------------- toasts */
+.toasts { position: fixed; right: 18px; bottom: 18px; display: grid; gap: 9px; z-index: 200; }
+.toast {
+  background: var(--ink); color: var(--surface); padding: 11px 15px; border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg); font-size: 13.5px; max-width: 380px; display: flex; gap: 9px;
+  align-items: flex-start; animation: slidein .18s ease-out;
+}
+@keyframes slidein { from { transform: translateX(18px); opacity: 0; } }
+.toast.good   { background: var(--good); color: #fff; }
+.toast.danger { background: var(--danger); color: #fff; }
+.toast.warn   { background: var(--warn); color: #fff; }
+
+/* ----------------------------------------------------------- charts */
+.chart { width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart .grid-line { stroke: var(--grid); stroke-width: 1; }
+.chart .axis-line { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { fill: var(--ink-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .bar { transition: opacity .12s; }
+.chart .bar:hover { opacity: .82; }
+.chart .mark-label { fill: var(--ink-2); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: 12.5px; color: var(--ink-2); }
+.legend .item { display: flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+.chart-tip {
+  position: fixed; pointer-events: none; background: var(--ink); color: var(--surface);
+  padding: 7px 11px; border-radius: 6px; font-size: 12.5px; box-shadow: var(--shadow-lg);
+  z-index: 300; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.chart-tip .t { font-weight: 700; margin-bottom: 3px; }
+.chart-tip .r { display: flex; gap: 9px; align-items: center; }
+.chart-tip .r .sw { width: 8px; height: 8px; border-radius: 2px; }
+.chart-tip .r .v { margin-left: auto; font-weight: 650; }
+.no-data { padding: 40px 20px; text-align: center; color: var(--ink-3); font-size: 13px; }
+
+/* =====================================================================
+   Touch input and small screens
+   Everything below adapts the same components rather than replacing them:
+   identical colours, type scale and wording, re-flowed to the space there is.
+   ===================================================================== */
+
+/*
+ * iOS Safari zooms the whole page in whenever a focused field's text is under
+ * 16px, and does not zoom back out afterwards. Every field here inherits the
+ * 14px body size, so tapping any of them left the layout stranded mid-zoom.
+ * 16px is the threshold, not a preference.
+ */
+@media (max-width: 900px), (pointer: coarse) {
+  .input, select.input, textarea.input, .search input { font-size: 16px; }
+  .search input { padding-top: 9px; padding-bottom: 9px; }
+}
+
+/* Targets sized for a fingertip rather than a cursor. */
+@media (pointer: coarse) {
+  .btn { min-height: 40px; padding: 9px 15px; }
+  .btn.sm { min-height: 34px; }
+  .btn.icon { min-width: 40px; justify-content: center; }
+  .btn.lg { min-height: 48px; }
+  .nav a { padding: 11px; font-size: 14px; }
+  .tabs button { padding: 12px 15px; }
+  .check input { width: 18px; height: 18px; }
+  .modal-head .x { min-width: 40px; min-height: 40px; }
+  .login-back { padding: 6px 0; }
+  /* A tapped row keeps :hover until something else is touched, which reads as
+     a selection that will not clear. Drop the cue where it cannot be trusted. */
+  table.dt tbody tr:hover { background: none; }
+  .tile.clickable:hover { border-color: var(--line); }
+}
+
+/* --------------------------------------------------- tablet / laptop */
+@media (max-width: 860px) {
+  .page-head { gap: 10px; margin-bottom: 14px; }
+  .page-head .actions { margin-left: auto; }
+  .export-bar { flex-wrap: wrap; }
+
+  /*
+   * `width: 100%` inside a scroll container squeezes every column down to its
+   * min-content width, which breaks "Kiran Pillai" across two lines to save
+   * room the page does not have anyway. Sizing to the content instead — but
+   * never narrower than the card — keeps each cell on one line and puts the
+   * shortfall where it belongs, in the horizontal scroll.
+   */
+  table.dt { width: max-content; min-width: 100%; }
+}
+
+/* --------------------------------------------------------- phones */
+@media (max-width: 560px) {
+  .content {
+    padding: 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .page-head h1 { font-size: 19px; }
+  /* actions drop under the title and share the row evenly, instead of being
+     squeezed against the right edge */
+  .page-head .actions { margin-left: 0; width: 100%; }
+  .page-head .actions .btn { flex: 1 1 auto; justify-content: center; }
+
+  /* two tiles per row still fit at 360px and stay readable — one huge tile per
+     row would push the table three scrolls down the page */
+  .tiles { grid-template-columns: repeat(auto-fit, minmax(144px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .tile { padding: 12px 13px; }
+  .tile .value { font-size: 21px; }
+  .tile .label { font-size: 10.5px; letter-spacing: .7px; }
+
+  .filters { padding: 10px; gap: 8px; }
+  .filters .field { min-width: 0; flex: 1 1 140px; }
+  .filters .field.grow { flex: 1 1 100%; }
+  .filters .spacer { display: none; }
+
+  .card-head { padding: 11px 13px; }
+  .card-body { padding: 13px; }
+  .export-bar { padding: 11px 13px; }
+  .grid { gap: 11px; }
+
+  table.dt { font-size: 13px; }
+  table.dt th, table.dt td { padding: 9px 11px; }
+  table.dt tfoot td { padding: 10px 11px; }
+
+  /* label above value reads far better than two cramped columns */
+  .kv { grid-template-columns: 1fr; gap: 0; }
+  .kv dt { margin-top: 9px; }
+  .kv dt:first-of-type { margin-top: 0; }
+
+  .timeline { padding-left: 17px; }
+  .lp-hero-cta .btn { width: 100%; justify-content: center; }
+}
+
+/* Long unbroken strings — an email, a UPI reference, a receipt number — must
+   wrap rather than widen their column past the screen. */
+@media (max-width: 560px) {
+  .kv dd, .alert, .card-head h3, .search-results .t, .search-results .s { overflow-wrap: anywhere; }
+}
+
+/* ------------------------------------------------------ modal sheets */
+/*
+ * A centred dialog with 20px of backdrop either side wastes the only axis a
+ * phone is short of. Below 560px the modal becomes a bottom sheet: full width,
+ * anchored to the thumb, with the action buttons above the home indicator.
+ */
+@media (max-width: 560px) {
+  .backdrop { padding: 0; place-items: end stretch; }
+  .modal, .modal.wide, .modal.narrow {
+    max-width: none; width: 100%;
+    max-height: 92vh; max-height: 92dvh;
+    border-radius: 14px 14px 0 0;
+    animation: sheet .2s ease-out;
+  }
+  .modal-head { padding: 14px 15px; }
+  .modal-body { padding: 15px; }
+  .modal-foot {
+    padding: 13px 15px;
+    padding-bottom: max(13px, env(safe-area-inset-bottom));
+    border-radius: 0;
+  }
+  .modal-foot .btn { flex: 1 1 0; justify-content: center; }
+}
+@keyframes sheet { from { transform: translateY(22px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .modal { animation: none; }
+}
+
+/* ----------------------------------------------------------- toasts */
+.toasts {
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  justify-items: end;
+}
+@media (max-width: 560px) {
+  /* full-bleed so a long message wraps instead of being clipped at 380px */
+  .toasts { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); justify-items: stretch; }
+  .toast { max-width: none; }
+}
+
+/* ----------------------------------------------------------- kanban */
+@media (max-width: 560px) {
+  /* one column fills the screen and the next snaps into place, so the board is
+     swiped through rather than nudged */
+  .kanban { scroll-snap-type: x mandatory; gap: 10px; }
+  .kcol { flex: 0 0 84vw; scroll-snap-align: start; max-height: none; }
+}
+
+/* --------------------------------------------------------- landing */
+@media (max-width: 560px) {
+  /* the logo keeps its 50px so its mark stays the same height as the buttons
+     beside it; the bar grows just enough to hold it with air above and below */
+  .lp-bar-inner { height: 64px; gap: 10px; }
+  .lp-hero { padding: 40px 0; }
+  .login-page { padding: 20px 16px; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+}
+
+/* Short landscape — a phone turned sideways has ~350px of height. Let the
+   login and hero panels scroll instead of centring content off-screen. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .login-page { align-items: flex-start; }
+  .lp-hero { padding: 32px 0; }
+  .lp-hero h1 { font-size: 28px; }
+}
+
+/* -------------------------------------------------------- printable */
+@media print {
+  .sidebar, .topbar, .page-head .actions, .filters, .btn { display: none !important; }
+  .shell { grid-template-columns: 1fr; }
+  .content { padding: 0; }
+  .card { box-shadow: none; border-color: #ccc; }
+}
