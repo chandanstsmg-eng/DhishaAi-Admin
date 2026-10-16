@@ -282,6 +282,17 @@ module.exports = function register(router) {
         [cols.status, params.id],
       );
     }
+
+    /*
+     * A student who came from an enquiry is the same person as that lead, so a
+     * corrected name has to reach it too — otherwise Enquiries keeps showing
+     * the old spelling and a search for the new one finds nothing. The enquiry
+     * update does the same write in the other direction.
+     */
+    if (cols.name && cols.name !== existing.name) {
+      db.run('UPDATE enquiries SET name = ?, updated_at = ? WHERE student_id = ?',
+        [cols.name, nowIso(), params.id]);
+    }
     audit(user, 'update', 'students', params.id, existing.reg_no);
     return detail(params.id);
   });
@@ -303,9 +314,24 @@ module.exports = function register(router) {
          VALUES (?,?,?,?,?,?)`,
         [params.id, s.stage, stage, str(body.note), user.name, nowIso()],
       );
-      // Terminal stages keep the headline status honest.
-      if (stage === 'Completed') db.run("UPDATE students SET status = 'Completed' WHERE id = ?", [params.id]);
-      if (stage === 'Dropped') db.run("UPDATE students SET status = 'Dropped' WHERE id = ?", [params.id]);
+      /*
+       * Terminal stages keep the headline status honest — and so does leaving
+       * one. Moving to Completed or Dropped used to set the status and nothing
+       * ever set it back, so a student put into a terminal stage by mistake and
+       * returned to Training stayed "Completed" for good: present in the
+       * pipeline and in their batch, but silently missing from every count of
+       * active students, with no screen admitting why.
+       *
+       * The restore is deliberately narrow. It fires only when the status still
+       * holds the value the old stage would have written, so a status somebody
+       * chose by hand — "On Hold" in particular — is left exactly as they set it.
+       */
+      const TERMINAL = { Completed: 'Completed', Dropped: 'Dropped' };
+      if (TERMINAL[stage]) {
+        db.run('UPDATE students SET status = ? WHERE id = ?', [TERMINAL[stage], params.id]);
+      } else if (TERMINAL[s.stage] && s.status === TERMINAL[s.stage]) {
+        db.run("UPDATE students SET status = 'Active' WHERE id = ?", [params.id]);
+      }
       audit(user, 'stage', 'students', params.id, `${s.stage} → ${stage}`);
       return detail(params.id);
     });

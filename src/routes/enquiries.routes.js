@@ -454,6 +454,18 @@ module.exports = function register(router) {
         db.run('UPDATE students SET joined_on = ?, updated_at = ? WHERE id = ?',
           [joinedOn, nowIso(), e.student_id]);
       }
+      /*
+       * The name is one person's name, and after conversion it was being kept
+       * in two places that could drift: correcting a spelling on the lead left
+       * the register showing the old one, and correcting it on the register
+       * left Enquiries showing the old one. Whichever side is edited now writes
+       * through to the other, so a correction made once is a correction made.
+       */
+      const newName = str(body.name);
+      if (e.student_id && newName && newName !== e.name) {
+        db.run('UPDATE students SET name = ?, updated_at = ? WHERE id = ?',
+          [newName, nowIso(), e.student_id]);
+      }
       return picked;
     });
     audit(user, 'update', 'enquiries', params.id, str(body.name) || e.name);

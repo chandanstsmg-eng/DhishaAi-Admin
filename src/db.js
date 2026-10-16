@@ -171,6 +171,43 @@ function retireStages() {
   console.log(`  Moved ${stranded.length} student(s) off retired stages to ${C.FIRST_STAGE}.`);
 }
 
+/**
+ * Put back the Active status of anyone who left a terminal stage.
+ *
+ * Moving a student to Completed or Dropped also wrote that word to their
+ * status, but moving them back out again never undid it. A student returned to
+ * Training from a mistaken Completed kept status = 'Completed' permanently:
+ * still in the pipeline, still in their batch, still being taught — and
+ * missing from every count of active students, including the figure on the
+ * dashboard, with nothing on screen explaining the gap.
+ *
+ * The stage endpoint now restores the status itself, so this exists for rows
+ * that drifted before that fix. It only touches a row whose stage is not
+ * terminal while its status still is, which is a state nothing can reach
+ * deliberately — "On Hold" and every hand-picked status fail that test and are
+ * left alone. A no-op from the second boot onwards.
+ */
+function healStageStatusDrift() {
+  const stranded = db.all(
+    `SELECT id, name, stage, status FROM students
+      WHERE status IN ('Completed','Dropped')
+        AND stage NOT IN ('Completed','Dropped')`,
+  );
+  if (!stranded.length) return;
+
+  const now = new Date().toISOString();
+  db.tx(() => {
+    for (const s of stranded) {
+      db.run("UPDATE students SET status = 'Active', updated_at = ? WHERE id = ?", [now, s.id]);
+    }
+  });
+  console.log(
+    `  Restored ${stranded.length} student(s) to Active — at stage `
+    + `${[...new Set(stranded.map((s) => s.stage))].join(', ')} but still marked `
+    + `${[...new Set(stranded.map((s) => s.status))].join('/')}.`,
+  );
+}
+
 /*
  * Settings that no longer control anything. A saved row outlives the setting
  * itself — the whole settings table is handed to the browser, so a dead key
@@ -195,6 +232,7 @@ function migrate() {
     }
   }
   retireStages();
+  healStageStatusDrift();
   dropRetiredSettings();
 }
 
